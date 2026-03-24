@@ -1,0 +1,20 @@
+# === SECRETS — NEVER COMMIT ===
+.env
+*.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Node (if you add any)
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
