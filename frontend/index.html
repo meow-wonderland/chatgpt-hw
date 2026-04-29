@@ -3,26 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MyChat — Your own LLM</title>
+  <title>MyChat v2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    /* ── Variables ─────────────────────────────────────────── */
     :root {
-      --bg:        #0d0f14;
-      --surface:   #161a24;
-      --border:    #262c3d;
-      --accent:    #4f8ef7;
-      --accent2:   #7c3aed;
-      --text:      #e2e8f0;
-      --muted:     #64748b;
-      --user-bg:   #1e2a45;
-      --ai-bg:     #161a24;
-      --radius:    12px;
-      --mono:      'IBM Plex Mono', monospace;
-      --sans:      'IBM Plex Sans', sans-serif;
+      --bg:       #0d0f14;
+      --surface:  #161a24;
+      --surface2: #1c2130;
+      --border:   #262c3d;
+      --accent:   #4f8ef7;
+      --accent2:  #7c3aed;
+      --green:    #22c55e;
+      --yellow:   #eab308;
+      --red:      #ef4444;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --user-bg:  #1e2a45;
+      --radius:   12px;
+      --mono:     'IBM Plex Mono', monospace;
+      --sans:     'IBM Plex Sans', sans-serif;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -34,148 +36,166 @@
       overflow: hidden;
     }
 
-    /* ── Sidebar ───────────────────────────────────────────── */
-    #sidebar {
-      width: 300px;
-      min-width: 300px;
+    /* ── Sessions panel ─────────────────────────────────────── */
+    #sessions-panel {
+      width: 220px;
+      min-width: 220px;
       background: var(--surface);
       border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-      gap: 18px;
-      overflow-y: auto;
-    }
-
-    #sidebar h1 {
-      font-family: var(--mono);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--accent);
-      letter-spacing: 0.08em;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .section-label {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .ctrl { display: flex; flex-direction: column; gap: 5px; }
-
-    select, textarea, input[type="range"] {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 13px;
-      padding: 8px 10px;
-      outline: none;
-      transition: border-color .2s;
-    }
-    select:focus, textarea:focus { border-color: var(--accent); }
-
-    textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
-
-    input[type="range"] {
-      padding: 4px 0;
-      accent-color: var(--accent);
-      cursor: pointer;
-    }
-
-    .range-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-    .range-val {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--accent);
-      min-width: 36px;
-      text-align: right;
-    }
-
-    #clear-btn {
-      margin-top: auto;
-      padding: 10px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--muted);
-      font-family: var(--sans);
-      font-size: 13px;
-      cursor: pointer;
-      transition: all .2s;
-    }
-    #clear-btn:hover { border-color: #ef4444; color: #ef4444; }
-
-    /* ── Main area ─────────────────────────────────────────── */
-    #main {
-      flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
-    /* ── Chat log ──────────────────────────────────────────── */
+    #sessions-header {
+      padding: 14px 12px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #sessions-header span {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .08em;
+    }
+
+    #new-chat-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 18px;
+      width: 26px;
+      height: 26px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: opacity .15s;
+    }
+    #new-chat-btn:hover { opacity: .8; }
+
+    #sessions-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px;
+    }
+    #sessions-list::-webkit-scrollbar { width: 4px; }
+    #sessions-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .session-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      transition: background .15s;
+    }
+    .session-item:hover { background: var(--surface2); }
+    .session-item.active { background: var(--user-bg); }
+
+    .session-name {
+      font-size: 12px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+    .session-del {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--red);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 2px;
+      flex-shrink: 0;
+    }
+    .session-item:hover .session-del { opacity: 1; }
+
+    /* ── Main chat ──────────────────────────────────────────── */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
     #chat-log {
       flex: 1;
       overflow-y: auto;
-      padding: 24px 20px;
+      padding: 20px 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       scroll-behavior: smooth;
     }
-
     #chat-log::-webkit-scrollbar { width: 6px; }
-    #chat-log::-webkit-scrollbar-track { background: transparent; }
     #chat-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    #empty-state {
+      margin: auto;
+      text-align: center;
+      color: var(--muted);
+    }
+    #empty-state .logo {
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    #empty-state p { font-size: 13px; }
 
     .msg {
       display: flex;
-      gap: 12px;
-      max-width: 820px;
+      gap: 10px;
+      max-width: 760px;
       width: 100%;
       margin: 0 auto;
-      animation: fadeUp .25s ease;
+      animation: fadeUp .2s ease;
     }
-
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
     .msg.user { flex-direction: row-reverse; }
 
     .avatar {
-      width: 32px;
-      height: 32px;
-      min-width: 32px;
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
     }
     .avatar.user-av { background: var(--user-bg); border: 1px solid var(--accent); color: var(--accent); }
     .avatar.ai-av   { background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #fff; }
 
+    .msg-body { display: flex; flex-direction: column; gap: 4px; max-width: calc(100% - 44px); }
+    .msg.user .msg-body { align-items: flex-end; }
+
+    .model-tag {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      padding: 1px 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      width: fit-content;
+    }
+
     .bubble {
-      max-width: calc(100% - 50px);
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-radius: var(--radius);
-      font-size: 14px;
+      font-size: 13.5px;
       line-height: 1.65;
       white-space: pre-wrap;
       word-break: break-word;
@@ -186,12 +206,28 @@
       border-top-right-radius: 4px;
     }
     .msg.ai .bubble {
-      background: var(--ai-bg);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-top-left-radius: 4px;
     }
 
-    /* blinking cursor while streaming */
+    .bubble img { max-width: 260px; max-height: 200px; border-radius: 8px; margin-bottom: 6px; display: block; }
+
+    /* Tool call badge */
+    .tool-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #1a2a1a;
+      border: 1px solid #2d4d2d;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--green);
+      margin-bottom: 6px;
+    }
+
     .cursor::after {
       content: '▊';
       animation: blink .7s step-end infinite;
@@ -199,50 +235,127 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
-    /* ── Empty state ───────────────────────────────────────── */
-    #empty-state {
-      margin: auto;
-      text-align: center;
+    /* Markdown rendered content */
+    .bubble h1, .bubble h2, .bubble h3 {
+      font-weight: 600;
+      margin: 10px 0 4px;
+      color: var(--text);
+    }
+    .bubble h1 { font-size: 16px; }
+    .bubble h2 { font-size: 15px; }
+    .bubble h3 { font-size: 14px; }
+    .bubble p  { margin: 4px 0; }
+    .bubble ul, .bubble ol { padding-left: 18px; margin: 4px 0; }
+    .bubble li { margin: 2px 0; }
+    .bubble code {
+      background: #0d0f14;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .bubble pre {
+      background: #0d0f14;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      overflow-x: auto;
+      margin: 6px 0;
+    }
+    .bubble pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 12px;
+    }
+    .bubble strong { font-weight: 600; color: var(--text); }
+    .bubble em { font-style: italic; }
+    .bubble blockquote {
+      border-left: 3px solid var(--accent);
+      margin: 6px 0;
+      padding-left: 10px;
       color: var(--muted);
     }
-    #empty-state .logo {
-      font-family: var(--mono);
-      font-size: 28px;
-      font-weight: 600;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-    }
-    #empty-state p { font-size: 14px; }
+    .bubble a { color: var(--accent); text-decoration: none; }
+    .bubble a:hover { text-decoration: underline; }
+    .bubble table { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 13px; }
+    .bubble th, .bubble td { border: 1px solid var(--border); padding: 5px 8px; }
+    .bubble th { background: var(--surface2); font-weight: 600; }
 
-    /* ── Input bar ─────────────────────────────────────────── */
+    /* ── Input area ─────────────────────────────────────────── */
     #input-area {
-      padding: 16px 20px;
+      padding: 12px 16px;
       border-top: 1px solid var(--border);
       background: var(--surface);
     }
 
     #input-wrap {
-      max-width: 820px;
+      max-width: 760px;
       margin: 0 auto;
       display: flex;
-      gap: 10px;
-      align-items: flex-end;
+      flex-direction: column;
+      gap: 8px;
     }
+
+    #image-preview-wrap {
+      display: none;
+      position: relative;
+      width: fit-content;
+    }
+    #image-preview {
+      max-height: 80px;
+      max-width: 120px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    #remove-img {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: var(--red);
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      color: #fff;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #input-row { display: flex; gap: 8px; align-items: flex-end; }
+
+    #attach-btn {
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+    #attach-btn:hover { border-color: var(--accent); color: var(--accent); }
 
     #user-input {
       flex: 1;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 9px;
       color: var(--text);
       font-family: var(--sans);
-      font-size: 14px;
-      padding: 12px 14px;
+      font-size: 13.5px;
+      padding: 10px 12px;
       resize: none;
       outline: none;
-      max-height: 200px;
+      max-height: 180px;
       overflow-y: auto;
       line-height: 1.5;
       transition: border-color .2s;
@@ -251,49 +364,209 @@
     #user-input::placeholder { color: var(--muted); }
 
     #send-btn {
-      width: 42px;
-      height: 42px;
-      min-width: 42px;
+      width: 38px;
+      height: 38px;
+      min-width: 38px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
       border: none;
-      border-radius: 10px;
+      border-radius: 9px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: opacity .2s, transform .1s;
+      transition: opacity .15s, transform .1s;
     }
-    #send-btn:hover { opacity: .85; }
-    #send-btn:active { transform: scale(.95); }
-    #send-btn:disabled { opacity: .4; cursor: not-allowed; }
-    #send-btn svg { width: 18px; height: 18px; fill: white; }
+    #send-btn:hover  { opacity: .85; }
+    #send-btn:active { transform: scale(.94); }
+    #send-btn:disabled { opacity: .35; cursor: not-allowed; }
+    #send-btn svg { width: 16px; height: 16px; fill: #fff; }
 
     #status-bar {
-      max-width: 820px;
-      margin: 6px auto 0;
       font-size: 11px;
       color: var(--muted);
       font-family: var(--mono);
-      min-height: 16px;
+      min-height: 14px;
+      padding-top: 2px;
     }
+
+    /* ── Settings panel ─────────────────────────────────────── */
+    #settings-panel {
+      width: 240px;
+      min-width: 240px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    #settings-panel h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ctrl { display: flex; flex-direction: column; gap: 5px; }
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    select, textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 12.5px;
+      padding: 7px 9px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    select:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .range-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .range-val {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      min-width: 34px;
+      text-align: right;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toggle-row label { font-size: 12px; color: var(--text); }
+
+    .toggle {
+      position: relative;
+      width: 34px;
+      height: 18px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider-t {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 18px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .slider-t::before {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      left: 3px;
+      top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform .2s;
+    }
+    .toggle input:checked + .slider-t { background: var(--accent); }
+    .toggle input:checked + .slider-t::before { transform: translateX(16px); }
+
+    #routing-display {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--green);
+      padding: 6px 8px;
+      background: #0d1a0d;
+      border: 1px solid #1f3d1f;
+      border-radius: 6px;
+      min-height: 28px;
+      word-break: break-all;
+    }
+
+    /* Hidden file input */
+    #file-input { display: none; }
   </style>
 </head>
 <body>
 
-<!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
-<aside id="sidebar">
-  <h1>⬡ MyChat</h1>
+<!-- ── Sessions sidebar ────────────────────────────────────────────────────── -->
+<nav id="sessions-panel">
+  <div id="sessions-header">
+    <span>⬡ MyChat v2</span>
+    <button id="new-chat-btn" title="New chat">+</button>
+  </div>
+  <div id="sessions-list"></div>
+</nav>
+
+<!-- ── Main chat area ─────────────────────────────────────────────────────── -->
+<main id="main">
+  <div id="chat-log">
+    <div id="empty-state">
+      <div class="logo">MyChat v2</div>
+      <p>開新對話或選擇歷史記錄</p>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <div id="input-wrap">
+      <div id="image-preview-wrap">
+        <img id="image-preview" src="" alt="preview" />
+        <button id="remove-img">✕</button>
+      </div>
+      <div id="input-row">
+        <button id="attach-btn" title="Attach image">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </button>
+        <input type="file" id="file-input" accept="image/*" />
+        <textarea id="user-input" rows="1" placeholder="輸入訊息… (Shift+Enter 換行，Enter 送出)"></textarea>
+        <button id="send-btn">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div id="status-bar"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ── Settings panel ─────────────────────────────────────────────────────── -->
+<aside id="settings-panel">
+  <h2>Settings</h2>
 
   <div class="ctrl">
     <div class="section-label">Model</div>
-    <select id="model-select">
-      <option value="">Loading…</option>
-    </select>
+    <select id="model-select"><option value="">Loading…</option></select>
+  </div>
+
+  <div class="ctrl">
+    <div class="section-label">Auto Route Result</div>
+    <div id="routing-display">—</div>
   </div>
 
   <div class="ctrl">
     <div class="section-label">System Prompt</div>
-    <textarea id="system-prompt" placeholder="You are a helpful assistant.">You are a helpful assistant.</textarea>
+    <textarea id="system-prompt">You are a helpful assistant.</textarea>
   </div>
 
   <div class="ctrl">
@@ -313,176 +586,298 @@
   </div>
 
   <div class="ctrl">
-    <div class="section-label">Memory</div>
-    <div class="range-row" style="gap:6px">
-      <input type="range" id="memory-turns" min="1" max="20" step="1" value="10" />
-      <span class="range-val" id="memory-val">10</span>
+    <div class="section-label">Tool Use</div>
+    <div class="toggle-row">
+      <label>Enable tools</label>
+      <label class="toggle">
+        <input type="checkbox" id="use-tools" checked />
+        <span class="slider-t"></span>
+      </label>
     </div>
-    <span style="font-size:11px;color:var(--muted)">保留最近 N 輪對話</span>
   </div>
-
-  <button id="clear-btn">🗑 Clear conversation</button>
 </aside>
 
-<!-- ── Main ─────────────────────────────────────────────────────────────── -->
-<main id="main">
-  <div id="chat-log">
-    <div id="empty-state">
-      <div class="logo">MyChat</div>
-      <p>選好模型與 System Prompt 就可以開始聊天了</p>
-    </div>
-  </div>
-
-  <div id="input-area">
-    <div id="input-wrap">
-      <textarea id="user-input" rows="1" placeholder="輸入訊息… (Shift+Enter 換行，Enter 送出)"></textarea>
-      <button id="send-btn">
-        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-      </button>
-    </div>
-    <div id="status-bar"></div>
-  </div>
-</main>
-
 <script>
-// ── Config ────────────────────────────────────────────────────────────────
-const API_BASE = "http://localhost:8000";   // Change to your deployed URL if needed
+const API = "http://localhost:8000";
 
-// ── State ─────────────────────────────────────────────────────────────────
-let history = [];         // { role, content }[]
-let isStreaming = false;
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentSessionId = null;
+let isStreaming       = false;
+let pendingImage      = null;   // { dataUrl, base64, mediaType }
 
-// ── DOM refs ──────────────────────────────────────────────────────────────
-const chatLog      = document.getElementById("chat-log");
-const emptyState   = document.getElementById("empty-state");
-const userInput    = document.getElementById("user-input");
-const sendBtn      = document.getElementById("send-btn");
-const statusBar    = document.getElementById("status-bar");
-const modelSelect  = document.getElementById("model-select");
-const systemPrompt = document.getElementById("system-prompt");
-const tempSlider   = document.getElementById("temperature");
-const tempVal      = document.getElementById("temp-val");
-const tokensSlider = document.getElementById("max-tokens");
-const tokensVal    = document.getElementById("tokens-val");
-const memSlider    = document.getElementById("memory-turns");
-const memVal       = document.getElementById("memory-val");
+// ── DOM ───────────────────────────────────────────────────────────────────────
+const chatLog       = document.getElementById("chat-log");
+const emptyState    = document.getElementById("empty-state");
+const userInput     = document.getElementById("user-input");
+const sendBtn       = document.getElementById("send-btn");
+const statusBar     = document.getElementById("status-bar");
+const modelSelect   = document.getElementById("model-select");
+const systemPrompt  = document.getElementById("system-prompt");
+const tempSlider    = document.getElementById("temperature");
+const tempVal       = document.getElementById("temp-val");
+const tokensSlider  = document.getElementById("max-tokens");
+const tokensVal     = document.getElementById("tokens-val");
+const sessionsList  = document.getElementById("sessions-list");
+const routingDisp   = document.getElementById("routing-display");
+const imgPreviewW   = document.getElementById("image-preview-wrap");
+const imgPreview    = document.getElementById("image-preview");
+const fileInput     = document.getElementById("file-input");
+const attachBtn     = document.getElementById("attach-btn");
+const removeImgBtn  = document.getElementById("remove-img");
+const useToolsCk    = document.getElementById("use-tools");
 
-// ── Sliders ───────────────────────────────────────────────────────────────
-tempSlider.addEventListener("input",   () => tempVal.textContent   = tempSlider.value);
-tokensSlider.addEventListener("input", () => tokensVal.textContent = tokensSlider.value);
-memSlider.addEventListener("input",    () => memVal.textContent    = memSlider.value);
+// ── Sliders ───────────────────────────────────────────────────────────────────
+tempSlider.oninput   = () => tempVal.textContent   = tempSlider.value;
+tokensSlider.oninput = () => tokensVal.textContent = tokensSlider.value;
 
-// ── Load models ───────────────────────────────────────────────────────────
+// ── Load models ───────────────────────────────────────────────────────────────
 async function loadModels() {
   try {
-    const res = await fetch(`${API_BASE}/api/models`);
-    const data = await res.json();
-    modelSelect.innerHTML = data.models.map(m =>
+    const { models } = await fetch(`${API}/api/models`).then(r => r.json());
+    modelSelect.innerHTML = models.map(m =>
       `<option value="${m.id}">${m.name}</option>`
     ).join("");
   } catch {
-    modelSelect.innerHTML = `<option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>`;
-    setStatus("⚠ Cannot reach backend — is it running?");
+    modelSelect.innerHTML = `<option value="auto">🤖 Auto Route</option>`;
+    setStatus("⚠ Backend unreachable");
   }
 }
-loadModels();
 
-// ── Clear ─────────────────────────────────────────────────────────────────
-document.getElementById("clear-btn").addEventListener("click", () => {
-  history = [];
-  chatLog.innerHTML = "";
-  chatLog.appendChild(emptyState);
-  emptyState.style.display = "";
-  setStatus("");
+// ── Sessions ──────────────────────────────────────────────────────────────────
+async function loadSessions() {
+  const sessions = await fetch(`${API}/api/sessions`).then(r => r.json()).catch(() => []);
+  renderSessions(sessions);
+}
+
+function renderSessions(sessions) {
+  sessionsList.innerHTML = "";
+  sessions.forEach(s => {
+    const div = document.createElement("div");
+    div.className = "session-item" + (s.id === currentSessionId ? " active" : "");
+    div.dataset.id = s.id;
+    div.innerHTML = `
+      <span class="session-name" title="${s.name}">${s.name}</span>
+      <button class="session-del" title="Delete">✕</button>
+    `;
+    div.querySelector(".session-name").onclick = () => openSession(s.id);
+    div.querySelector(".session-del").onclick  = (e) => { e.stopPropagation(); deleteSession(s.id); };
+    sessionsList.appendChild(div);
+  });
+}
+
+document.getElementById("new-chat-btn").onclick = async () => {
+  const session = await fetch(`${API}/api/sessions`, { method: "POST" }).then(r => r.json());
+  currentSessionId = session.id;
+  clearChat();
+  await loadSessions();
+};
+
+async function openSession(id) {
+  currentSessionId = id;
+  clearChat();
+
+  const msgs = await fetch(`${API}/api/sessions/${id}/messages`).then(r => r.json()).catch(() => []);
+  msgs.forEach(m => {
+    appendMessage(m.role, m.content, m.model_used, null, false);
+  });
+
+  await loadSessions();
+  setStatus(`Loaded ${msgs.length} messages`);
+}
+
+async function deleteSession(id) {
+  await fetch(`${API}/api/sessions/${id}`, { method: "DELETE" });
+  if (currentSessionId === id) {
+    currentSessionId = null;
+    clearChat();
+  }
+  await loadSessions();
+}
+
+// ── Image handling ────────────────────────────────────────────────────────────
+attachBtn.onclick = () => fileInput.click();
+
+fileInput.onchange = (e) => {
+  const file = e.target.files[0];
+  if (file) readImageFile(file);
+  fileInput.value = "";
+};
+
+removeImgBtn.onclick = () => {
+  pendingImage = null;
+  imgPreviewW.style.display = "none";
+  imgPreview.src = "";
+};
+
+// Paste image support
+document.addEventListener("paste", (e) => {
+  const items = e.clipboardData?.items || [];
+  for (const item of items) {
+    if (item.type.startsWith("image/")) {
+      readImageFile(item.getAsFile());
+      break;
+    }
+  }
 });
 
-// ── Auto-resize textarea ──────────────────────────────────────────────────
+function readImageFile(file) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const dataUrl  = ev.target.result;
+    const base64   = dataUrl.split(",")[1];
+    const mediaType = file.type;
+    pendingImage = { dataUrl, base64, mediaType };
+    imgPreview.src = dataUrl;
+    imgPreviewW.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Input ─────────────────────────────────────────────────────────────────────
 userInput.addEventListener("input", () => {
   userInput.style.height = "auto";
-  userInput.style.height = Math.min(userInput.scrollHeight, 200) + "px";
+  userInput.style.height = Math.min(userInput.scrollHeight, 180) + "px";
 });
 
-// ── Send on Enter (Shift+Enter = newline) ─────────────────────────────────
 userInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     if (!isStreaming) sendMessage();
   }
 });
-sendBtn.addEventListener("click", () => { if (!isStreaming) sendMessage(); });
+sendBtn.onclick = () => { if (!isStreaming) sendMessage(); };
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function setStatus(msg) { statusBar.textContent = msg; }
 
-function scrollToBottom() {
-  chatLog.scrollTop = chatLog.scrollHeight;
+function scrollBottom() { chatLog.scrollTop = chatLog.scrollHeight; }
+
+function clearChat() {
+  chatLog.innerHTML = "";
+  chatLog.appendChild(emptyState);
+  emptyState.style.display = "";
 }
 
-function appendMessage(role, content = "") {
+function appendMessage(role, content = "", modelUsed = null, imgDataUrl = null, animate = true) {
   emptyState.style.display = "none";
 
   const div = document.createElement("div");
   div.className = `msg ${role}`;
+  if (!animate) div.style.animation = "none";
 
   const av = document.createElement("div");
   av.className = `avatar ${role === "user" ? "user-av" : "ai-av"}`;
   av.textContent = role === "user" ? "U" : "AI";
 
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
-  bubble.textContent = content;
+  const body = document.createElement("div");
+  body.className = "msg-body";
 
-  div.appendChild(av);
-  div.appendChild(bubble);
-  chatLog.appendChild(div);
-  scrollToBottom();
-  return bubble;
-}
-
-// ── Main send ──────────────────────────────────────────────────────────────
-async function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
-
-  // Push user message
-  history.push({ role: "user", content: text });
-  appendMessage("user", text);
-  userInput.value = "";
-  userInput.style.height = "auto";
-
-  // Trim history to memory window (keep last N turns = N pairs)
-  const maxTurns = parseInt(memSlider.value);
-  if (history.length > maxTurns * 2) {
-    history = history.slice(history.length - maxTurns * 2);
+  if (modelUsed) {
+    const tag = document.createElement("div");
+    tag.className = "model-tag";
+    tag.textContent = modelUsed;
+    body.appendChild(tag);
   }
 
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+
+  if (imgDataUrl) {
+    const img = document.createElement("img");
+    img.src = imgDataUrl;
+    bubble.appendChild(img);
+  }
+
+  // Use innerHTML with marked for AI messages, textContent for user
+  if (role === "ai" && content) {
+    bubble.innerHTML += marked.parse(content);
+  } else {
+    const textNode = document.createTextNode(content);
+    bubble.appendChild(textNode);
+  }
+
+  body.appendChild(bubble);
+  div.appendChild(av);
+  div.appendChild(body);
+  chatLog.appendChild(div);
+  scrollBottom();
+  return { bubble };
+}
+
+function appendToolBadge(toolCalls) {
+  const div = document.createElement("div");
+  div.style.cssText = "max-width:760px;width:100%;margin:0 auto;";
+  toolCalls.forEach(tc => {
+    const badge = document.createElement("div");
+    badge.className = "tool-badge";
+    badge.innerHTML = `⚙ <strong>${tc.name}</strong> → ${tc.result}`;
+    div.appendChild(badge);
+  });
+  chatLog.appendChild(div);
+  scrollBottom();
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text && !pendingImage) return;
+
+  // Auto-create session if none
+  if (!currentSessionId) {
+    const session = await fetch(`${API}/api/sessions`, { method: "POST" }).then(r => r.json());
+    currentSessionId = session.id;
+    await loadSessions();
+  }
+
+  // Show user message
+  const imgForDisplay = pendingImage ? pendingImage.dataUrl : null;
+  appendMessage("user", text, null, imgForDisplay);
+
+  // Build request
+  const imagePayload = pendingImage
+    ? { media_type: pendingImage.mediaType, data: pendingImage.base64 }
+    : null;
+
+  // Snapshot current settings
+  const reqBody = {
+    session_id:    currentSessionId,
+    model:         modelSelect.value,
+    system_prompt: systemPrompt.value.trim() || "You are a helpful assistant.",
+    messages:      [{ role: "user", content: text, image: imagePayload }],
+    temperature:   parseFloat(tempSlider.value),
+    max_tokens:    parseInt(tokensSlider.value),
+    use_tools:     useToolsCk.checked,
+    stream:        true,
+  };
+
+  // Clear input
+  userInput.value = "";
+  userInput.style.height = "auto";
+  pendingImage = null;
+  imgPreviewW.style.display = "none";
+  imgPreview.src = "";
+
   // AI bubble
-  const aiBubble = appendMessage("ai", "");
-  aiBubble.classList.add("cursor");
+  const { bubble } = appendMessage("ai", "");
+  bubble.classList.add("cursor");
 
   isStreaming = true;
   sendBtn.disabled = true;
   setStatus("⏳ Thinking…");
 
-  let fullText = "";
+  let fullText    = "";
+  let actualModel = reqBody.model;
 
   try {
-    const res = await fetch(`${API_BASE}/api/chat`, {
-      method: "POST",
+    const res = await fetch(`${API}/api/chat`, {
+      method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model:         modelSelect.value,
-        system_prompt: systemPrompt.value.trim() || "You are a helpful assistant.",
-        messages:      history,
-        temperature:   parseFloat(tempSlider.value),
-        max_tokens:    parseInt(tokensSlider.value),
-        stream:        true,
-      }),
+      body:    JSON.stringify(reqBody),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const reader = res.body.getReader();
+    const reader  = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
 
@@ -492,35 +887,68 @@ async function sendMessage() {
       buffer += decoder.decode(value, { stream: true });
 
       const lines = buffer.split("\n");
-      buffer = lines.pop();           // keep incomplete line
+      buffer = lines.pop();
 
       for (const line of lines) {
         if (!line.startsWith("data: ")) continue;
-        const payload = line.slice(6).trim();
-        if (payload === "[DONE]") break;
+        const raw = line.slice(6).trim();
+        if (raw === "[DONE]") break;
         try {
-          const { text } = JSON.parse(payload);
-          fullText += text;
-          aiBubble.textContent = fullText;
-          scrollToBottom();
+          const payload = JSON.parse(raw);
+
+          if (payload.error) {
+            bubble.innerHTML = `❌ ${payload.error}`;
+            setStatus("Error from backend — see above.");
+            return;
+          }
+
+          if (payload.tool_calls) {
+            appendToolBadge(payload.tool_calls);
+          }
+
+          if (payload.text) {
+            fullText += payload.text;
+            // Re-render markdown on every chunk
+            bubble.innerHTML = marked.parse(fullText);
+            scrollBottom();
+          }
+
+          if (payload.model) {
+            actualModel = payload.model;
+          }
+
+          if (payload.done) {
+            routingDisp.textContent = actualModel;
+            const tag = bubble.parentElement.querySelector(".model-tag");
+            if (tag) tag.textContent = actualModel;
+            else {
+              const t = document.createElement("div");
+              t.className = "model-tag";
+              t.textContent = actualModel;
+              bubble.parentElement.insertBefore(t, bubble);
+            }
+          }
+
         } catch {}
       }
     }
 
-    // Push assistant message to history
-    history.push({ role: "assistant", content: fullText });
-    setStatus(`✓ ${modelSelect.options[modelSelect.selectedIndex]?.text ?? modelSelect.value}  |  記憶：${Math.floor(history.length/2)} 輪`);
+    setStatus(`✓ Done  |  model: ${actualModel}`);
+    await loadSessions();
 
   } catch (err) {
-    aiBubble.textContent = `❌ Error: ${err.message}`;
-    history.pop();   // remove failed user message
+    bubble.innerHTML = `❌ Error: ${err.message}`;
     setStatus("Error — check if backend is running.");
   } finally {
-    aiBubble.classList.remove("cursor");
-    isStreaming = false;
+    bubble.classList.remove("cursor");
+    isStreaming    = false;
     sendBtn.disabled = false;
   }
 }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadModels();
+loadSessions();
 </script>
 </body>
 </html>
